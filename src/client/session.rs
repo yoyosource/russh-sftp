@@ -7,6 +7,7 @@ use super::{
     rawsession::{Limits, SftpResult},
     RawSftpSession,
 };
+use crate::protocol::RenameFlags;
 use crate::{
     extensions::{self, Statvfs},
     protocol::{FileAttributes, OpenFlags, StatusCode},
@@ -18,6 +19,7 @@ pub(crate) struct Extensions {
     pub fsync: bool,
     pub statvfs: bool,
     pub limits: Option<Arc<Limits>>,
+    pub posix_rename: bool,
 }
 
 /// High-level SFTP implementation for easy interaction with a remote file system.
@@ -63,6 +65,10 @@ impl SftpSession {
                 .get(extensions::STATVFS)
                 .is_some_and(|e| e == "2"),
             limits: None,
+            posix_rename: version
+                .extensions
+                .get(extensions::POSIX_RENAME)
+                .is_some_and(|e| e == "1"),
         };
 
         if version
@@ -231,6 +237,26 @@ impl SftpSession {
         N: Into<String>,
     {
         self.session.rename(oldpath, newpath).await.map(|_| ())
+    }
+
+    pub async fn rename_with_flags<O, N>(&self, oldpath: O, newpath: N, flags: RenameFlags) -> SftpResult<()>
+    where
+        O: Into<String>,
+        N: Into<String>,
+    {
+        self.session.rename_with_flags(oldpath, newpath, flags).await.map(|_| ())
+    }
+
+    /// Rename a file or directory to a new name.
+    pub async fn posix_rename<O, N>(&self, oldpath: O, newpath: N) -> SftpResult<bool>
+    where
+        O: Into<String>,
+        N: Into<String>,
+    {
+        if !self.extensions.posix_rename {
+            return Ok(false);
+        }
+        self.session.posix_rename(oldpath, newpath).await.map(|_| true)
     }
 
     /// Creates a symlink of the specified target.

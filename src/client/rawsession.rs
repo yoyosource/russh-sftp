@@ -14,6 +14,8 @@ use tokio::{
 };
 
 use super::{error::Error, run, Handler};
+use crate::extensions::PosixRenameExtension;
+use crate::protocol::RenameFlags;
 use crate::{
     de,
     extensions::{
@@ -581,6 +583,14 @@ impl RawSftpSession {
         O: Into<String>,
         N: Into<String>,
     {
+        self.rename_with_flags(oldpath, newpath, RenameFlags::default()).await
+    }
+
+    pub async fn rename_with_flags<O, N>(&self, oldpath: O, newpath: N, flags: RenameFlags) -> SftpResult<Status>
+    where
+        O: Into<String>,
+        N: Into<String>,
+    {
         let id = self.use_next_id();
         let result = self
             .send(
@@ -589,8 +599,28 @@ impl RawSftpSession {
                     id,
                     oldpath: oldpath.into(),
                     newpath: newpath.into(),
+                    flags,
                 }
-                .into(),
+                    .into(),
+            )
+            .await?;
+
+        into_status!(result)
+    }
+
+    pub async fn posix_rename<O, N>(&self, oldpath: O, newpath: N) -> SftpResult<Status>
+    where
+        O: Into<String>,
+        N: Into<String>,
+    {
+        let result = self
+            .extended(
+                extensions::POSIX_RENAME,
+                PosixRenameExtension {
+                    oldpath: oldpath.into(),
+                    newpath: newpath.into(),
+                }
+                    .try_into()?,
             )
             .await?;
 

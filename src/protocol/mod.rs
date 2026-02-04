@@ -54,7 +54,9 @@ pub use self::{
     readlink::ReadLink,
     realpath::RealPath,
     remove::Remove,
-    rename::Rename,
+    rename::{
+        Rename, RenameFlags
+    },
     rmdir::RmDir,
     setstat::SetStat,
     stat::Stat,
