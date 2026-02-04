@@ -88,6 +88,22 @@ impl SftpSession {
             extensions: Arc::new(extensions),
         })
     }
+    
+    pub fn supports_hardlink(&self) -> bool {
+        self.extensions.hardlink
+    }
+    
+    pub fn supports_fsync(&self) -> bool {
+        self.extensions.fsync
+    }
+    
+    pub fn supports_statvfs(&self) -> bool {
+        self.extensions.statvfs
+    }
+    
+    pub fn supports_posix_rename(&self) -> bool {
+        self.extensions.posix_rename
+    }
 
     /// Set the maximum response time in seconds.
     /// Default: 10 seconds
